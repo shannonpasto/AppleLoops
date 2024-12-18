@@ -4,7 +4,7 @@
 # download-install_apple_loops.sh - script to download and install all available Apple loops for the specified plist
 # Shannon Pasto https://github.com/shannonpasto/AppleLoops
 #
-# v1.0 (16/12/2024)
+# v1.1 (18/12/2024)
 ###################
 
 ## uncomment the next line to output debugging to stdout
@@ -16,7 +16,7 @@
 ME=$(basename "$0")
 # shellcheck disable=SC2034
 BINPATH=$(dirname "$0")
-appPlist="" # garageband1047 logicpro1081 mainstage362
+appPlist=""  # garageband1047 logicpro1110 mainstage362
 jqBin=$(whereis -qb jq)
 
 ###############################################################################
@@ -72,6 +72,11 @@ cafPID=$(pgrep caffeinate)
 # get the plist file
 /bin/echo "getting the main plist for ${appPlist}"
 /usr/bin/curl -s "${baseURL}/${appPlist}.plist${baseURLOpt}" -o "${tmpDir}/${appPlist}".plist
+
+if ! /usr/bin/plutil "${tmpDir}/${appPlist}".plist >/dev/null 2>&1; then
+  /bin/echo "Invalid plist file. Exiting"
+  exit 1
+fi
 
 # loop through all the pkg files and download/install
 for thePKG in $(/usr/bin/defaults read "${tmpDir}/${appPlist}".plist Packages | /usr/bin/grep DownloadName | /usr/bin/awk -F \" '{print $2}'); do
