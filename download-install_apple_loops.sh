@@ -4,7 +4,7 @@
 # download-install_apple_loops.sh - script to download and install all available Apple loops for the specified plist
 # Shannon Pasto https://github.com/shannonpasto/AppleLoops
 #
-# v1.1 (18/12/2024)
+# v1.1.1 (18/01/2025)
 ###################
 
 ## uncomment the next line to output debugging to stdout
@@ -49,7 +49,11 @@ tmpDir="/tmp/${appPlist}"
 /bin/mkdir "${tmpDir}"
 
 # see if we have a caching server on the network. pick the first one
-cacheSrvrURL=$(/usr/bin/AssetCacheLocatorUtil -j 2>/dev/null | "${jqBin}" -r '.results.reachability[]' | /usr/bin/head -n 1)
+if [ "$(/usr/bin/sw_vers -buildVersion | /usr/bin/cut -c 1-2 -)" -ge 24 ]; then
+  cacheSrvrURL=$(/usr/bin/AssetCacheLocatorUtil -j 2>/dev/null | "${jqBin}" -r '.results.reachability[]' | /usr/bin/head -n 1)
+else
+  cacheSrvrURL=$(/usr/bin/AssetCacheLocatorUtil -j 2>/dev/null | /usr/bin/plutil -extract results.reachability.0 raw -o - -)
+fi
 if [ "${cacheSrvrURL}" ]; then
   /bin/echo "Cache server located. Testing"
   /usr/bin/curl --telnet-option 'BOGUS=1' --connect-timeout 2 -s telnet://"${cacheSrvrURL}"
