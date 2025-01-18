@@ -4,7 +4,7 @@
 # download-install_apple_loops.sh - script to download and install all available Apple loops for the specified plist
 # Shannon Pasto https://github.com/shannonpasto/AppleLoops
 #
-# v1.2 (18/01/2025)
+# v1.2.1 (18/01/2025)
 ###################
 
 ## uncomment the next line to output debugging to stdout
@@ -73,7 +73,7 @@ if [ "${appPlist}" = "" ]; then
   /bin/echo "No plist configured as a parameter. Searching /Applications for any/all apps"
   plistNames="garageband logicpro mainstage"
   for X in $plistNames; do
-    /usr/bin/find /Applications -name "${X}*.plist" | /usr/bin/rev | /usr/bin/cut -d "/" -f 1 - | /usr/bin/rev | /usr/bin/cut -d "." -f 1 - >> "${tmpDir}/thelist.txt"
+    /usr/bin/find /Applications -name "${X}*.plist" -maxdepth 4 | /usr/bin/rev | /usr/bin/cut -d "/" -f 1 - | /usr/bin/rev | /usr/bin/cut -d "." -f 1 - >> "${tmpDir}/thelist.txt"
   done
 
   if [ ! -s "${tmpDir}/thelist.txt" ]; then
