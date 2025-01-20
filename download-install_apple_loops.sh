@@ -1,10 +1,10 @@
-#!/bin/sh
+#!/bin/sh -x
 
 ###################
 # download-install_apple_loops.sh - script to download and install all available Apple loops for the specified plist
 # Shannon Pasto https://github.com/shannonpasto/AppleLoops
 #
-# v1.2.1 (18/01/2025)
+# v1.2.2 (21/01/2025)
 ###################
 
 ## uncomment the next line to output debugging to stdout
@@ -48,7 +48,10 @@ tmpDir="/tmp/${appPlist}"
 if [ "$(/usr/bin/sw_vers -buildVersion | /usr/bin/cut -c 1-2 -)" -ge 24 ]; then
   cacheSrvrURL=$(/usr/bin/AssetCacheLocatorUtil -j 2>/dev/null | /usr/bin/jq -r '.results.reachability[]' | /usr/bin/head -n 1)
 else
-  cacheSrvrURL=$(/usr/bin/AssetCacheLocatorUtil -j 2>/dev/null | /usr/bin/plutil -extract results.reachability.0 raw -o - -)
+  cacheCount=$(/usr/bin/AssetCacheLocatorUtil -j 2>/dev/null | /usr/bin/plutil -extract results.reachability raw -o - -)
+  if [ "${cacheCount}" -gt 0 ]; then
+    cacheSrvrURL=$(/usr/bin/AssetCacheLocatorUtil -j 2>/dev/null | /usr/bin/plutil -extract results.reachability.0 raw -o - -)
+  fi
 fi
 if [ "${cacheSrvrURL}" ]; then
   /bin/echo "Cache server located. Testing"
@@ -100,7 +103,7 @@ for X in $appPlist; do
     if ! /usr/sbin/pkgutil --pkgs | /usr/bin/grep "$(basename "${thePKGFile}" .pkg)"; then
       /bin/echo "Installing ${thePKGFile}"
       /usr/bin/curl -s "${baseURL}/${thePKG}${baseURLOpt}" -o "${tmpDir}/${thePKGFile}"
-      /usr/sbin/installer -pkg "${tmpDir}/${thePKGFile}" -target /
+      #/usr/sbin/installer -pkg "${tmpDir}/${thePKGFile}" -target /
     else
       /bin/echo "${thePKGFile} already installed"
     fi
