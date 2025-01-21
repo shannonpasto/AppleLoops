@@ -4,7 +4,7 @@
 # download-install_apple_loops.sh - script to download and install all available Apple loops for the specified plist
 # Shannon Pasto https://github.com/shannonpasto/AppleLoops
 #
-# v1.2.2 (21/01/2025)
+# v1.2.3 (21/01/2025)
 ###################
 
 ## uncomment the next line to output debugging to stdout
@@ -103,7 +103,7 @@ for X in $appPlist; do
     if ! /usr/sbin/pkgutil --pkgs | /usr/bin/grep "$(basename "${thePKGFile}" .pkg)"; then
       /bin/echo "Installing ${thePKGFile}"
       /usr/bin/curl -s "${baseURL}/${thePKG}${baseURLOpt}" -o "${tmpDir}/${thePKGFile}"
-      #/usr/sbin/installer -pkg "${tmpDir}/${thePKGFile}" -target /
+      /usr/sbin/installer -pkg "${tmpDir}/${thePKGFile}" -target /
     else
       /bin/echo "${thePKGFile} already installed"
     fi
