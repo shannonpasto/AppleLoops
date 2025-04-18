@@ -4,7 +4,7 @@
 # download-install_apple_loops.sh - script to download and install all available Apple loops for the specified plist
 # Shannon Pasto https://github.com/shannonpasto/AppleLoops
 #
-# v1.2.4 (14/03/2025)
+# v1.3 (18/04/2025)
 ###################
 
 ## uncomment the next line to output debugging to stdout
@@ -45,27 +45,60 @@ tmpDir=$(mkdir -d)
 
 # see if we have a caching server on the network. pick the first one
 if [ "$(/usr/bin/sw_vers -buildVersion | /usr/bin/cut -c 1-2 -)" -ge 24 ]; then
-  cacheSrvrURL=$(/usr/bin/AssetCacheLocatorUtil -j 2>/dev/null | /usr/bin/jq -r '.results.reachability[]' | /usr/bin/head -n 1)
+  /bin/echo "macOS Sequoia or later installed. Using jq to extract the data"
+  cacheSrvrCount=$(/usr/bin/AssetCacheLocatorUtil -j 2>/dev/null | /usr/bin/jq -r '.results.reachability[]' | wc -l | xargs)
+  case "${cacheSrvrCount}" in
+    ''|0)
+      /bin/echo "No cache server(s) found"
+      ;;
+
+    1)
+      /bin/echo "${cacheSrvrCount} server(s) found"
+      cacheSrvrURL=$(/usr/bin/AssetCacheLocatorUtil -j 2>/dev/null | /usr/bin/jq -r ".results.reachability[0]")
+      ;;
+
+    *)
+      /bin/echo "${cacheSrvrCount} server found"
+      cacheSrvrCount=$((cacheSrvrCount-1))
+      cacheSrvrSelect=$(jot -r 1 0 "${cacheSrvrCount}")
+      cacheSrvrURL=$(/usr/bin/AssetCacheLocatorUtil -j 2>/dev/null | /usr/bin/jq -r ".results.reachability[${cacheSrvrSelect}]")
+      ;;
+  esac
 else
-  cacheCount=$(/usr/bin/AssetCacheLocatorUtil -j 2>/dev/null | /usr/bin/plutil -extract results.reachability raw -o - -)
-  if [ "${cacheCount}" -gt 0 ]; then
-    cacheSrvrURL=$(/usr/bin/AssetCacheLocatorUtil -j 2>/dev/null | /usr/bin/plutil -extract results.reachability.0 raw -o - -)
-  fi
+  /bin/echo "macOS Sonoma or older installed. Using plutil to extract the data"
+  cacheSrvrCount=$(/usr/bin/AssetCacheLocatorUtil -j 2>/dev/null | /usr/bin/plutil -extract results.reachability raw -o - -)
+  case "${cacheSrvrCount}" in
+    ''|0)
+      /bin/echo "No cache server(s) found"
+      ;;
+
+    1)
+      /bin/echo "${cacheSrvrCount} server(s) found"
+      cacheSrvrURL=$(/usr/bin/AssetCacheLocatorUtil -j 2>/dev/null | /usr/bin/plutil -extract results.reachability.0 raw -o - -)
+      ;;
+
+    *)
+      /bin/echo "${cacheSrvrCount} server(s) found"
+      cacheSrvrCount=$((cacheSrvrCount-1))
+      cacheSrvrSelect=$(jot -r 1 0 "${cacheSrvrCount}")
+      cacheSrvrURL=$(/usr/bin/AssetCacheLocatorUtil -j 2>/dev/null | /usr/bin/plutil -extract results.reachability."${cacheSrvrSelect}" raw -o - -)
+      ;;
+  esac
 fi
 if [ "${cacheSrvrURL}" ]; then
   /bin/echo "Cache server located. Testing"
   /usr/bin/curl --telnet-option 'BOGUS=1' --connect-timeout 2 -s telnet://"${cacheSrvrURL}"
   if [ $? = 48 ]; then
     /bin/echo "Cache server reachable"
-    baseURL="http://${cacheSrvrURL}/lp10_ms3_content_2016"
+    downloadURL="http://${cacheSrvrURL}/lp10_ms3_content_2016"
     baseURLOpt="?source=audiocontentdownload.apple.com&sourceScheme=https"
   fi
 else
   /bin/echo "Cache Server not found or not reachable"
-  baseURL="https://audiocontentdownload.apple.com/lp10_ms3_content_2016"
+  downloadURL="https://audiocontentdownload.apple.com/lp10_ms3_content_2016"
 fi
 
-/bin/echo "Base URL is ${baseURL}"
+/bin/echo "Download URL is ${downloadURL}"
 
 # take a double shot espresso
 /usr/bin/caffeinate -ims &
@@ -89,7 +122,7 @@ fi
 for X in $appPlist; do
   # get the plist file
   /bin/echo "Fetching the Apple plist for ${X}"
-  /usr/bin/curl -s "${baseURL}/${X}.plist${baseURLOpt}" -o "${tmpDir}/${X}".plist
+  /usr/bin/curl -s "${downloadURL}/${X}.plist${baseURLOpt}" -o "${tmpDir}/${X}".plist
 
   if ! /usr/bin/plutil "${tmpDir}/${X}".plist >/dev/null 2>&1; then
     /bin/echo "Invalid plist file. Exiting"
@@ -101,7 +134,7 @@ for X in $appPlist; do
     thePKGFile=$(/bin/echo "${thePKG}" | /usr/bin/sed 's/..\/lp10_ms3_content_2013\///')
     if ! /usr/sbin/pkgutil --pkgs | /usr/bin/grep "$(basename "${thePKGFile}" .pkg)"; then
       /bin/echo "Installing ${thePKGFile}"
-      /usr/bin/curl -s "${baseURL}/${thePKG}${baseURLOpt}" -o "${tmpDir}/${thePKGFile}"
+      /usr/bin/curl -s "${downloadURL}/${thePKG}${baseURLOpt}" -o "${tmpDir}/${thePKGFile}"
       /usr/sbin/installer -pkg "${tmpDir}/${thePKGFile}" -target /
     else
       /bin/echo "${thePKGFile} already installed"
