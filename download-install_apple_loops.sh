@@ -4,7 +4,7 @@
 # download-install_apple_loops.sh - script to download and install all available Apple loops for the specified plist
 # Shannon Pasto https://github.com/shannonpasto/AppleLoops
 #
-# v1.3.1 (18/04/2025)
+# v1.3.2 (12/08/2025)
 ###################
 
 ## uncomment the next line to output debugging to stdout
@@ -41,7 +41,7 @@ elif [ "${4}" != "" ] || [ "${appPlist}" != "" ]; then
   /bin/echo "Parameter 4 overwritten by script variable"
 fi
 
-tmpDir=$(mkdir -d)
+tmpDir=$(mktemp -d)
 
 # see if we have a caching server on the network. pick the first one
 if [ "$(/usr/bin/sw_vers -buildVersion | /usr/bin/cut -c 1-2 -)" -ge 24 ]; then
