@@ -2,9 +2,9 @@
 
 ###################
 # download-install_apple_loops.sh - script to download and install all available Apple loops for the specified plist
-# Shannon Pasto https://github.com/shannonpasto/AppleLoops
+# https://github.com/gimmickyboot/AppleLoops
 #
-# v1.3.2 (12/08/2025)
+# v1.3.3 (19/12/2025)
 ###################
 
 ## uncomment the next line to output debugging to stdout
